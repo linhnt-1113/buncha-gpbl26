@@ -1,14 +1,18 @@
 //Include Libraries
 #include "esp_now.h"
+#include "esp_wifi.h"
 #include "WiFi.h"
 #include "Wire.h"
 #include "MPU6050_light.h"
 
-//Reciever MAC Address
-uint8_t broadcastAddress[] = {0x20, 0xE7, 0xC8, 0xB2, 0x7B, 0xF8};
+// Transmitter MAC: 20:E7:C8:B2:7B:F8
+// Receiver MAC: 68:FE:71:FD:79:C8
+
+//Receiver MAC Address
+uint8_t broadcastAddress[] = {0x68, 0xFE, 0x71, 0xFD, 0x79, 0xC8};
 
 //Struct to send data
-typedef struct{
+typedef struct __attribute__((packed)) {
   bool f;
   bool b;
   bool l;
@@ -37,9 +41,13 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   
   WiFi.mode(WIFI_STA);
+  int channel = 1; // Pick a channel
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
   
   
 //initialize esp-now

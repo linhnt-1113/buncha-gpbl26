@@ -1,5 +1,6 @@
 //Include Libraries
 #include "esp_now.h"
+#include "esp_wifi.h"
 #include "WiFi.h"
 
 //Set Motor PINs
@@ -8,7 +9,7 @@
 #define IN2 5
 #define IN3 18
 #define IN4 19
-#define ENB 21 //PWM Enabled
+#define ENB 25 //PWM Enabled
  
 //Initialize global variables
 bool front = 0;
@@ -17,7 +18,7 @@ bool left = 0;
 bool right = 0;
 
 //Struct to receive data (same as on transmitter side)
-typedef struct{
+typedef struct __attribute__((packed)) {
   bool f;
   bool b;
   bool l;
@@ -25,14 +26,20 @@ typedef struct{
 } message;
 message data;
 
-//Function to be called on callback
+//Function to be called on callbacks
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len){
   memcpy(&data, incomingData, sizeof(data));
   front = data.f;
   back = data.b;
   left = data.l;
   right = data.r;
+
+  Serial.print("Recv - F: "); Serial.print(front);
+  Serial.print(" B: "); Serial.print(back);
+  Serial.print(" L: "); Serial.print(left);
+  Serial.print(" R: "); Serial.println(right);
 }
+
 
 //Functions for specific movements
 void carforward() {
@@ -77,6 +84,7 @@ void carStop() {
 }
 
 void setup() {
+  Serial.begin(115200);
   //Initialize pins
   pinMode(ENA, OUTPUT);
   pinMode(IN1, OUTPUT);
@@ -86,6 +94,10 @@ void setup() {
   pinMode(ENB, OUTPUT);
 
   WiFi.mode(WIFI_STA);
+  int channel = 1; // Pick a channel
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
 
   //Initialize esp-now
   if (esp_now_init() != ESP_OK){
@@ -96,6 +108,10 @@ void setup() {
   esp_now_register_recv_cb(OnDataRecv);
 }
  
+  // front = data.f;
+  // back = data.b;
+  // left = data.l;
+  // right = data.r;
 void loop() {
   if (front == 1) {
     carforward();
